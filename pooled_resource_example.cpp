@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stack>
 #include <memory>
 #include <unordered_map>
@@ -42,9 +43,33 @@ public:
     }
 };
 
-// グローバルプールインスタンス
-static resource_pool<gl::buffer> buffer_pool;
-static resource_pool<gl::texture_2d> texture_pool;
+// リソース取得の特殊化のためのトレイト
+template<typename ResourceType>
+struct resource_pool_traits 
+{
+    static resource_pool<ResourceType>& get_pool();
+};
+
+// 各リソース型に対するプールの特殊化
+template<>
+struct resource_pool_traits<gl::buffer> 
+{
+    static resource_pool<gl::buffer>& get_pool() 
+    {
+        static resource_pool<gl::buffer> pool;
+        return pool;
+    }
+};
+
+template<>
+struct resource_pool_traits<gl::texture_2d> 
+{
+    static resource_pool<gl::texture_2d>& get_pool() 
+    {
+        static resource_pool<gl::texture_2d> pool;
+        return pool;
+    }
+};
 
 // プール対応のカスタムリソースクラス
 template<typename description_type_, typename actual_type_>
@@ -72,14 +97,9 @@ protected:
     {
         if (transient()) 
         {
-            // プールから取得（特殊化された関数を呼び出し）
-            if constexpr (std::is_same_v<actual_type, gl::buffer>) 
-            {
-                actual_ptr_ = buffer_pool.acquire(description_);
-            } else if constexpr (std::is_same_v<actual_type, gl::texture_2d>) 
-            {
-                actual_ptr_ = texture_pool.acquire(description_);
-            }
+            // 特殊化されたプールから取得
+            auto& pool = resource_pool_traits<actual_type>::get_pool();
+            actual_ptr_ = pool.acquire(description_);
         }
     }
     
@@ -87,14 +107,9 @@ protected:
     {
         if (transient() && actual_ptr_) 
         {
-            // プールに返却
-            if constexpr (std::is_same_v<actual_type, gl::buffer>) 
-            {
-                buffer_pool.release(std::move(actual_ptr_));
-            } else if constexpr (std::is_same_v<actual_type, gl::texture_2d>) 
-            {
-                texture_pool.release(std::move(actual_ptr_));
-            }
+            // 特殊化されたプールに返却
+            auto& pool = resource_pool_traits<actual_type>::get_pool();
+            pool.release(std::move(actual_ptr_));
         }
     }
 
@@ -108,13 +123,17 @@ using pooled_buffer_resource = pooled_resource<glr::buffer_description, gl::buff
 using pooled_texture_2d_resource = pooled_resource<glr::texture_description, gl::texture_2d>;
 
 // 使用例
-void demonstrate_pooling() {
+void demonstrate_pooling() 
+{
     std::cout << "=== プール対応フレームグラフのデモ ===" << std::endl;
     
     fg::framegraph framegraph;
     
     // プール統計を表示する関数
-    auto print_pool_stats = []() {
+    auto print_pool_stats = []() 
+    {
+        auto& buffer_pool = resource_pool_traits<gl::buffer>::get_pool();
+        auto& texture_pool = resource_pool_traits<gl::texture_2d>::get_pool();
         std::cout << "プール統計 - バッファ: " << buffer_pool.pool_size() 
                   << ", テクスチャ: " << texture_pool.pool_size() << std::endl;
     };
@@ -135,7 +154,8 @@ void demonstrate_pooling() {
             pooled_texture_2d_resource* texture;
         };
         
-        auto task = framegraph.add_render_task<task_data>(
+        auto task = framegraph.add_render_task<task_data>
+        (
             "Pooled Task",
             [&](task_data& data, fg::render_task_builder& builder) 
             {
