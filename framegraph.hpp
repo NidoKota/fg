@@ -10,9 +10,9 @@
 #include <type_traits>
 #include <vector>
 
-#include <fg/render_task.hpp>
-#include <fg/render_task_builder.hpp>
-#include <fg/resource.hpp>
+#include "render_task.hpp"
+#include "render_task_builder.hpp"
+#include "resource.hpp"
 
 namespace fg
 {

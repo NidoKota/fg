@@ -5,8 +5,8 @@
 #include <string>
 #include <variant>
 
-#include <fg/realize.hpp>
-#include <fg/resource_base.hpp>
+#include "realize.hpp"
+#include "resource_base.hpp"
 
 namespace fg
 {
