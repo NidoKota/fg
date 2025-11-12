@@ -7,57 +7,65 @@
 
 namespace fg
 {
-class framegraph;
-class render_task_base;
-class render_task_builder;
+    class framegraph;
+    class render_task_base;
+    class render_task_builder;
 
-class resource_base
-{
-public:
-  explicit resource_base  (const std::string& name, const render_task_base* creator) : name_(name), creator_(creator), ref_count_(0)
-  {
-    static std::size_t id = 0;
-    id_ = id++;
-  }
-  resource_base           (const resource_base&  that) = delete ;
-  resource_base           (      resource_base&& temp) = default;
-  virtual ~resource_base  ()                           = default;
-  resource_base& operator=(const resource_base&  that) = delete ;
-  resource_base& operator=(      resource_base&& temp) = default;
-                             
-  std::size_t        id       () const
-  {
-    return id_;
-  }                                                      
-                              
-  const std::string& name     () const
-  {
-    return name_;
-  }
-  void               set_name (const std::string& name)
-  {
-    name_ = name;
-  }
+    // リソースの使用情報を保持する構造体
+    struct resource_usage_info
+    {
+        const render_task_base *creator;                    // リソースを作成したタスク
+        const std::vector<const render_task_base *> *readers; // リソースを読み取るタスクのリスト
+        const std::vector<const render_task_base *> *writers; // リソースを書き込むタスクのリスト
+    };
 
-  bool               transient() const
-  {
-    return creator_ != nullptr;
-  }
+    class resource_base
+    {
+    public:
+        explicit resource_base(const std::string &name, const render_task_base *creator) : name_(name), creator_(creator), ref_count_(0)
+        {
+            static std::size_t id = 0;
+            id_ = id++;
+        }
+        resource_base(const resource_base &that) = delete;
+        resource_base(resource_base &&temp) = default;
+        virtual ~resource_base() = default;
+        resource_base &operator=(const resource_base &that) = delete;
+        resource_base &operator=(resource_base &&temp) = default;
 
-protected:
-  friend framegraph;
-  friend render_task_builder;
+        std::size_t id() const
+        {
+            return id_;
+        }
 
-  virtual void realize  () = 0;
-  virtual void derealize() = 0;
+        const std::string &name() const
+        {
+            return name_;
+        }
+        void set_name(const std::string &name)
+        {
+            name_ = name;
+        }
 
-  std::size_t                          id_       ;
-  std::string                          name_     ;
-  const render_task_base*              creator_  ;
-  std::vector<const render_task_base*> readers_  ;
-  std::vector<const render_task_base*> writers_  ;
-  std::size_t                          ref_count_; // Computed through framegraph compilation.
-};
+        bool transient() const
+        {
+            return creator_ != nullptr;
+        }
+
+    protected:
+        friend framegraph;
+        friend render_task_builder;
+
+        virtual void realize(const resource_usage_info &usage_info) = 0;
+        virtual void derealize() = 0;
+
+        std::size_t id_;
+        std::string name_;
+        const render_task_base *creator_;
+        std::vector<const render_task_base *> readers_;
+        std::vector<const render_task_base *> writers_;
+        std::size_t ref_count_; // Computed through framegraph compilation.
+    };
 }
 
 #endif

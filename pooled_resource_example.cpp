@@ -93,13 +93,19 @@ public:
     }
 
 protected:
-    void realize() override 
+    void realize(const fg::resource_usage_info &usage_info) override 
     {
         if (transient()) 
         {
             // 特殊化されたプールから取得
             auto& pool = resource_pool_traits<actual_type>::get_pool();
             actual_ptr_ = pool.acquire(description_);
+            
+            // 使用情報をログ出力（例）
+            std::cout << "リソース realize - Creator: " 
+                      << (usage_info.creator ? usage_info.creator->name() : "none")
+                      << ", Readers: " << usage_info.readers->size()
+                      << ", Writers: " << usage_info.writers->size() << std::endl;
         }
     }
     

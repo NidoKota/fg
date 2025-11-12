@@ -6,15 +6,19 @@
 
 namespace fg
 {
-template<typename description_type, typename actual_type>
-struct missing_realize_implementation : std::false_type {};
+    struct resource_usage_info; // Forward declaration
 
-template<typename description_type, typename actual_type>
-std::unique_ptr<actual_type> realize(const description_type& description)
-{
-  static_assert(missing_realize_implementation<description_type, actual_type>::value, "Missing realize implementation for description - type pair.");
-  return nullptr;
-}
+    template <typename description_type, typename actual_type>
+    struct missing_realize_implementation : std::false_type
+    {
+    };
+
+    template <typename description_type, typename actual_type>
+    std::unique_ptr<actual_type> realize(const description_type &description, const resource_usage_info &usage_info)
+    {
+        static_assert(missing_realize_implementation<description_type, actual_type>::value, "Missing realize implementation for description - type pair.");
+        return nullptr;
+    }
 }
 
 #endif
