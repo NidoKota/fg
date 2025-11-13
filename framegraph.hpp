@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <stack>
@@ -172,7 +173,17 @@ namespace fg
                     };
                     resource->realize(usage_info);
                 }
+                
+                // タスク実行前のコールバック (renderpass開始など)
+                if (pre_execute_)
+                    pre_execute_(step.render_task);
+                
                 step.render_task->execute();
+                
+                // タスク実行後のコールバック (renderpass終了など)
+                if (post_execute_)
+                    post_execute_(step.render_task);
+                
                 for (auto resource : step.derealized_resources)
                     resource->derealize();
             }
@@ -181,6 +192,15 @@ namespace fg
         {
             render_tasks_.clear();
             resources_.clear();
+        }
+        
+        void set_pre_execute(const std::function<void(const render_task_base*)> &callback)
+        {
+            pre_execute_ = callback;
+        }
+        void set_post_execute(const std::function<void(const render_task_base*)> &callback)
+        {
+            post_execute_ = callback;
         }
         void export_graphviz(const std::string &filepath)
         {
@@ -233,6 +253,29 @@ namespace fg
             stream << "}";
         }
 
+        // アクセサ関数
+        std::vector<render_task_base*> get_render_tasks() const
+        {
+            std::vector<render_task_base*> result;
+            result.reserve(render_tasks_.size());
+            for (const auto& task : render_tasks_)
+            {
+                result.push_back(task.get());
+            }
+            return result;
+        }
+
+        std::vector<resource_base*> get_resources() const
+        {
+            std::vector<resource_base*> result;
+            result.reserve(resources_.size());
+            for (const auto& resource : resources_)
+            {
+                result.push_back(resource.get());
+            }
+            return result;
+        }
+
     protected:
         friend render_task_builder;
 
@@ -246,6 +289,8 @@ namespace fg
         std::vector<std::unique_ptr<render_task_base>> render_tasks_;
         std::vector<std::unique_ptr<resource_base>> resources_;
         std::vector<step> timeline_; // Computed through framegraph compilation.
+        std::function<void(const render_task_base*)> pre_execute_;  // 全タスク実行前のコールバック
+        std::function<void(const render_task_base*)> post_execute_; // 全タスク実行後のコールバック
     };
 
     template <typename resource_type, typename description_type>

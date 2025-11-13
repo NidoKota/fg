@@ -52,6 +52,24 @@ namespace fg
             return creator_ != nullptr;
         }
 
+        // リソース使用情報へのアクセサ
+        const render_task_base* creator() const
+        {
+            return creator_;
+        }
+        const std::vector<const render_task_base*>& readers() const
+        {
+            return readers_;
+        }
+        const std::vector<const render_task_base*>& writers() const
+        {
+            return writers_;
+        }
+        const std::vector<const render_task_base*>& input_attachment_users() const
+        {
+            return input_attachment_users_;
+        }
+
     protected:
         friend framegraph;
         friend render_task_builder;
