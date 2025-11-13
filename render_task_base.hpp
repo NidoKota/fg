@@ -54,6 +54,10 @@ namespace fg
         {
             return writes_;
         }
+        const std::vector<const resource_base *>& input_attachments() const
+        {
+            return input_attachments_;
+        }
 
     protected:
         friend framegraph;
@@ -67,6 +71,7 @@ namespace fg
         std::vector<const resource_base *> creates_;
         std::vector<const resource_base *> reads_;
         std::vector<const resource_base *> writes_;
+        std::vector<const resource_base *> input_attachments_; // Input attachments (like Unity RenderGraph)
         std::size_t ref_count_; // Computed through framegraph compilation.
     };
 }

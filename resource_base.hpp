@@ -64,6 +64,7 @@ namespace fg
         const render_task_base *creator_;
         std::vector<const render_task_base *> readers_;
         std::vector<const render_task_base *> writers_;
+        std::vector<const render_task_base *> input_attachment_users_; // Tasks using this as input attachment
         std::size_t ref_count_; // Computed through framegraph compilation.
     };
 }

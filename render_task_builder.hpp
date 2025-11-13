@@ -27,6 +27,8 @@ namespace fg
         resource_type *read(resource_type *resource);
         template <typename resource_type>
         resource_type *write(resource_type *resource);
+        template <typename resource_type>
+        resource_type *use_input_attachment(resource_type *resource);
 
     protected:
         framegraph *framegraph_;

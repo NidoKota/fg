@@ -220,6 +220,16 @@ namespace fg
                     stream << "\"" << render_task->name() << "\" ";
                 stream << "} [color=firebrick]\n";
             }
+            stream << "\n";
+
+            // Input attachments with different color (purple/magenta)
+            for (auto &resource : resources_)
+            {
+                stream << "\"" << resource->name() << "\" -> { ";
+                for (auto &render_task : resource->input_attachment_users_)
+                    stream << "\"" << render_task->name() << "\" ";
+                stream << "} [color=magenta, style=dashed]\n";
+            }
             stream << "}";
         }
 
@@ -259,6 +269,13 @@ namespace fg
     {
         resource->writers_.push_back(render_task_);
         render_task_->writes_.push_back(resource);
+        return resource;
+    }
+    template <typename resource_type>
+    resource_type *render_task_builder::use_input_attachment(resource_type *resource)
+    {
+        resource->input_attachment_users_.push_back(render_task_);
+        render_task_->input_attachments_.push_back(resource);
         return resource;
     }
 }
